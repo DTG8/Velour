@@ -1,0 +1,49 @@
+# Secrets and Environment Config
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Databases and Local Storage
+*.db
+*.sqlite
+*.sqlite3
+
+# Python Caches and Virtual Environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Node / Frontend Caches
+node_modules/
+dist/
+build/
+.svelte-kit/
+.next/
+.serverless/
+.netlify/
+.vite/
+.parcel-cache/
+.eslintcache
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
