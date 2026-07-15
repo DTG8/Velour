@@ -8,6 +8,7 @@ from app.dependencies import get_db, get_current_user
 from app.models.profile import ProviderProfile
 from app.models.user import User
 from app.schemas.profile import ProviderSearchResult
+from app.core.storage import resolve_avatar_url
 
 router = APIRouter(prefix="/providers", tags=["Search & Discovery"])
 
@@ -69,8 +70,6 @@ def search_providers(
         query = query.filter(ProviderProfile.st_rate == True)
     elif service_type == ServiceType.OVN:
         query = query.filter(ProviderProfile.ovn_rate == True)
-
-from app.core.storage import resolve_avatar_url
 
     results = query.offset(skip).limit(limit).all()
 
