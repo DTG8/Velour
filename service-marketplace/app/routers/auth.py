@@ -33,12 +33,16 @@ def signup(payload: SignUpRequest, db: Session = Depends(get_db)) -> TokenRespon
     Create a new user. Returns an access token immediately so the client
     doesn't need a separate login step after registration.
     """
+    # Clean and convert empty strings to None to prevent unique constraint conflicts
+    email = payload.email.strip() if payload.email and payload.email.strip() else None
+    phone_number = payload.phone_number.strip() if payload.phone_number and payload.phone_number.strip() else None
+
     new_user = User(
         username=payload.username,
         hashed_password=hash_password(payload.password),
         role=payload.role,
-        email=payload.email,
-        phone_number=payload.phone_number,
+        email=email,
+        phone_number=phone_number,
     )
     db.add(new_user)
     try:
