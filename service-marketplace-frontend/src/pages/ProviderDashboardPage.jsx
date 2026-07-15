@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Briefcase, User, MapPin, Sparkles, CheckCircle2, 
-  AlertCircle, Loader2, Save, Power, Trash2
+  AlertCircle, Loader2, Save, Power, Trash2, Camera
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { api } from '../lib/api';
@@ -16,7 +16,7 @@ const LAGOS_DISTRICTS = [
 ];
 
 export default function ProviderDashboardPage() {
-  const { user } = useApp();
+  const { user, hydrate } = useApp();
   const [profile, setProfile] = useState({
     display_name: '',
     age: 20,
@@ -30,6 +30,31 @@ export default function ProviderDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState(null); // 'success' | 'error'
+
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setUploadingAvatar(true);
+    setAvatarError('');
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const updatedProfile = await api.uploadAvatar(formData);
+      setProfile(prev => ({ ...prev, avatar_url: updatedProfile.avatar_url }));
+      await hydrate();
+    } catch (err) {
+      console.error(err);
+      setAvatarError('Failed to upload avatar');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -133,6 +158,36 @@ export default function ProviderDashboardPage() {
         </div>
 
         <form onSubmit={handleSave} className="bg-charcoal border border-border rounded-3xl p-6 space-y-6">
+          {/* Avatar Upload */}
+          <div className="flex flex-col items-center justify-center pb-4 border-b border-border/50">
+            <div className="relative group w-24 h-24 rounded-3xl overflow-hidden bg-void border border-border flex items-center justify-center">
+              {uploadingAvatar ? (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                  <Loader2 size={24} className="text-gold animate-spin" />
+                </div>
+              ) : profile.avatar_url ? (
+                <img src={profile.avatar_url} alt="Profile Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <User size={36} className="text-gold/20" />
+              )}
+              
+              <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-opacity">
+                <Camera size={18} className="text-gold mb-1" />
+                Edit
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={handleAvatarChange}
+                  disabled={uploadingAvatar}
+                />
+              </label>
+            </div>
+            {avatarError && (
+              <p className="text-red-400 text-[10px] uppercase font-bold tracking-wider mt-2">{avatarError}</p>
+            )}
+          </div>
+
           <div className="space-y-4">
             <div>
               <label className="text-xs text-ash uppercase tracking-widest font-medium mb-1.5 block">Display Name</label>

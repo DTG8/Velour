@@ -18,6 +18,7 @@ class UserRead(BaseModel):
     role: UserRole
     email: str | None
     phone_number: str | None
+    avatar_url: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -91,9 +92,27 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse
     response_model=UserRead,
     summary="Get current authenticated user info",
 )
-def get_me(current_user: User = Depends(get_current_user)) -> User:
+def get_me(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> dict:
     """
     Returns the authenticated user's profile information.
     Used by the frontend to hydrate user state on page refresh.
     """
-    return current_user
+    avatar_url = None
+    if current_user.role == UserRole.provider:
+        from app.models.profile import ProviderProfile
+        from app.core.storage import resolve_avatar_url
+        profile = db.query(ProviderProfile).filter(ProviderProfile.user_id == current_user.id).first()
+        if profile:
+            avatar_url = resolve_avatar_url(profile.avatar_url)
+
+    return {
+        "id": current_user.id,
+        "username": current_user.username,
+        "role": current_user.role,
+        "email": current_user.email,
+        "phone_number": current_user.phone_number,
+        "avatar_url": avatar_url
+    }

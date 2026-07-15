@@ -70,6 +70,8 @@ def search_providers(
     elif service_type == ServiceType.OVN:
         query = query.filter(ProviderProfile.ovn_rate == True)
 
+from app.core.storage import resolve_avatar_url
+
     results = query.offset(skip).limit(limit).all()
 
     # Map to response schema with username from the eagerly-loaded User
@@ -79,7 +81,7 @@ def search_providers(
             user_id=profile.user_id,
             username=profile.user.username,
             display_name=profile.display_name,
-            avatar_url=profile.avatar_url,
+            avatar_url=resolve_avatar_url(profile.avatar_url),
             age=profile.age,
             location=profile.location,
             bio=profile.bio,

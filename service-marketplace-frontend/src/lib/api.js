@@ -69,6 +69,17 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
+  uploadAvatar: (formData) =>
+    fetch(`${BASE_URL}/profile/avatar`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: formData,
+    }).then(res => {
+      if (!res.ok) throw new Error('Failed to upload avatar');
+      return res.json();
+    }),
   setOnlineStatus: (online) =>
     fetchAPI(`/profile/online?online=${online}`, {
       method: 'PATCH',

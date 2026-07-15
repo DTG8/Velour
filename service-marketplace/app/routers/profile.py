@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db, get_current_user, require_provider
 from app.models.profile import ProviderProfile
 from app.models.user import User
 from app.schemas.profile import ProfileCreate, ProfileRead, ProfileUpdate
+from app.core.storage import resolve_avatar_url, upload_file
 
 router = APIRouter(prefix="/profile", tags=["Provider Profile"])
 
@@ -36,6 +37,7 @@ def create_profile(
     db.add(profile)
     db.commit()
     db.refresh(profile)
+    profile.avatar_url = resolve_avatar_url(profile.avatar_url)
     return profile
 
 
@@ -56,6 +58,7 @@ def get_my_profile(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Profile not found — create one first via POST /profile",
         )
+    profile.avatar_url = resolve_avatar_url(profile.avatar_url)
     return profile
 
 
@@ -84,6 +87,7 @@ def update_profile(
 
     db.commit()
     db.refresh(profile)
+    profile.avatar_url = resolve_avatar_url(profile.avatar_url)
     return profile
 
 
@@ -112,6 +116,43 @@ def set_online_status(
     return profile
 
 
+@router.post(
+    "/avatar",
+    response_model=ProfileRead,
+    summary="Upload profile picture / avatar (Providers only)",
+)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_provider),
+) -> ProviderProfile:
+    profile = db.query(ProviderProfile).filter(
+        ProviderProfile.user_id == current_user.id
+    ).first()
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile not found — create one first via POST /profile",
+        )
+
+    file_ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+    object_name = f"{current_user.id}/avatar.{file_ext}"
+
+    uploaded_name = await upload_file(file.file, object_name, file.content_type)
+    if not uploaded_name:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to upload file to storage",
+        )
+
+    profile.avatar_url = object_name
+    db.commit()
+    db.refresh(profile)
+    
+    profile.avatar_url = resolve_avatar_url(profile.avatar_url)
+    return profile
+
+
 @router.get(
     "/{user_id}",
     response_model=ProfileRead,
@@ -130,4 +171,5 @@ def get_provider_profile(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Provider profile not found",
         )
+    profile.avatar_url = resolve_avatar_url(profile.avatar_url)
     return profile

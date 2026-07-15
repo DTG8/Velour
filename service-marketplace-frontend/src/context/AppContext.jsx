@@ -87,6 +87,7 @@ export function AppProvider({ children }) {
     toggleFavorite,
     isProvider: user?.role === 'provider',
     isClient: user?.role === 'client',
+    hydrate,
   };
 
   return (
