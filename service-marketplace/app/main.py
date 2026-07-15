@@ -40,12 +40,23 @@ app = FastAPI(
     # docs_url=None, redoc_url=None,
 )
 
+import os
+
 # ── CORS ──────────────────────────────────────────────────────────────────────
-# Tighten `allow_origins` to your frontend domain(s) in production.
+# Complies with CORS spec: disables credentials if wildcard is used, 
+# and allows explicit domains (e.g., Netlify) to use credentials.
+raw_origins = os.environ.get("ALLOWED_ORIGINS", "*")
+if raw_origins == "*":
+    origins = ["*"]
+    allow_credentials = False
+else:
+    origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
+    allow_credentials = True
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=origins,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
